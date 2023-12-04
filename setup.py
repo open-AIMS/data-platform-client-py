@@ -65,7 +65,7 @@ except subprocess.CalledProcessError as e:
 try:
     from pybuilder.cli import main
     # verbose, debug, skip all optional...
-    if main("-v", "-X", "-o", "--reset-plugins", "clean", "package"):
+    if main("-v", "-X", "-o", "--reset-plugins", "--no-venvs", "clean", "package"):
         raise RuntimeError("PyBuilder build failed")
 
     from pybuilder.reactor import Reactor
