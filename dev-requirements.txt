@@ -1,0 +1,4 @@
+pandas
+strenum
+requests
+pytest
