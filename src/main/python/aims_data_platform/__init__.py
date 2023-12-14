@@ -7,6 +7,7 @@ from urllib.parse import quote
 
 import pandas as pd
 import requests
+from pandas import DataFrame
 from strenum import StrEnum
 
 logger = logging.getLogger(__name__)
@@ -181,9 +182,18 @@ class DataRequestBuilder:
         self.filter_dict[filter_type.value] = value
         return self
 
+    def from_date(self, value):
+        return self.add_filter(FilterType.FROM_DATE, value)
+
+    def thru_date(self, value):
+        return self.add_filter(FilterType.THRU_DATE, value)
+
     def summary(self, summary_type: SummaryType):
         self.summary_type = summary_type
         return self
+
+    def daily(self):
+        return self.summary(SummaryType.DAILY)
 
     def add_url_args(self, **url_args):
         self.url_args_dict.update(url_args)
@@ -255,6 +265,14 @@ class DataRequestBuilder:
             return_partial=self.return_partial,
             sleep_time=self.sleep_time,
         )
+
+    def csv(self, csv_file_path, citation_file_path=None):
+        df: DataFrame
+        df, citation = self.data_frame()
+        df.to_csv(csv_file_path)
+        if citation_file_path is not None:
+            with open(citation_file_path, mode='wt') as citation_file:
+                citation_file.write(citation)
 
 
 class AIMSDataClient:

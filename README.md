@@ -13,7 +13,7 @@ It is possible to install the python package using pip and git directly since th
 package is not yet published on PyPI:
 
 ```shell
-pip install data_platform_client_py@https://github.com/open-AIMS/data-platform-client-py.git
+pip install data_platform_client_py@git+https://github.com/open-AIMS/data-platform-client-py.git
 ```
 Alternatively if you have been supplied with the Python wheel file it can be installed using pip:
 
