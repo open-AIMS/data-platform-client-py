@@ -140,12 +140,12 @@ dplat = AIMSDataClient.from_defaults()
 sites = dplat.sites(DataSet.UNDERWAY, include_details=True)
 site_name = sites[0]
 
-df, citation = (dplat.data_request()
-                .underway()
-                .add_filter(FilterType.SITE, site_name)
-                .daily()
-                .from_date("2020-01-01")
-                .thru_date("2020-03-01")
-                .csv("data.csv"))
+(dplat.data_request()
+    .underway()
+    .add_filter(FilterType.SITE, site_name)
+    .daily()
+    .from_date("2020-01-01")
+    .thru_date("2020-03-01")
+    .csv("data.csv"))
 
 ```
