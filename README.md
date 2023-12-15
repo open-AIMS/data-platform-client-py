@@ -130,3 +130,22 @@ client = AIMSDataClient()
 client.sites(DataSet.WEATHER, include_details=True)
 
 ```
+Further shortcuts have been added to the data request builder
+so that you can now make requests like:
+
+```python
+from aims_data_platform import AIMSDataClient, DataSet, FilterType
+
+dplat = AIMSDataClient.from_defaults()
+sites = dplat.sites(DataSet.UNDERWAY, include_details=True)
+site_name = sites[0]
+
+df, citation = (dplat.data_request()
+                .underway()
+                .add_filter(FilterType.SITE, site_name)
+                .daily()
+                .from_date("2020-01-01")
+                .thru_date("2020-03-01")
+                .csv("data.csv"))
+
+```

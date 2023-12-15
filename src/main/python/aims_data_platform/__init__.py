@@ -13,9 +13,6 @@ from strenum import StrEnum
 logger = logging.getLogger(__name__)
 
 _DOI_PREFIX_ = "10.25845"
-_DATA_V2_ = "/data-v2.0"
-_DATA_V3_ = "/data-v3.0"
-_DATA_V2_APIS_ = ["5b4eb0f9bb848", "5c09bf93f315d"]
 _DEFAULT_HOST_ = "api.aims.gov.au"
 _DEFAULT_SCHEME_ = "https"
 
@@ -32,6 +29,11 @@ class DataRequestFailedError(Exception):
     pass
 
 
+class DataSetVersion(StrEnum):
+    DATA_V2 = "/data-v2.0"
+    DATA_V3 = "/data-v3.0"
+
+
 class SummaryType(StrEnum):
     DAILY = "daily"
     WEEKLY = "weekly"
@@ -40,15 +42,18 @@ class SummaryType(StrEnum):
 
 
 class DataSet(StrEnum):
-    TEMP_LOGGERS = "5b4eb0f9bb848"
-    WEATHER = "5c09bf93f315d"
-    # UNDERWAY = ""
+    TEMP_LOGGERS = ("5b4eb0f9bb848", DataSetVersion.DATA_V2)
+    WEATHER = ("5c09bf93f315d", DataSetVersion.DATA_V2)
+    UNDERWAY = ("9vr7-9g80", DataSetVersion.DATA_V3)
+
+    def __new__(cls, value, data_set_version: DataSetVersion):
+        data_set = str.__new__(cls, value)
+        data_set._value_ = value
+        data_set.data_set_version = data_set_version
+        return data_set
 
     def base_url(self, scheme=None, host=None, base_path=None):
-        if base_path is None:
-            final_base_path = _DATA_V2_ if self.value in _DATA_V2_APIS_ else _DATA_V3_
-        else:
-            final_base_path = base_path
+        final_base_path = base_path or self.data_set_version.value
         final_host = host or _DEFAULT_HOST_
         final_scheme = scheme or _DEFAULT_SCHEME_
         return f"{final_scheme}://{final_host}{final_base_path}/{_DOI_PREFIX_}/{self.value}"
@@ -162,7 +167,7 @@ class FilterType(StrEnum):
 class DataRequestBuilder:
     def __init__(
         self,
-        data_set: DataSet,
+        data_set: DataSet = None,
         aims_data_client: "AIMSDataClient" = None,
         retry_attempts=4,
         return_partial=False,
@@ -177,6 +182,19 @@ class DataRequestBuilder:
         self.retry_attempts = retry_attempts
         self.return_partial = return_partial
         self.sleep_time = sleep_time
+
+    def data_set(self, data_set_type: DataSet):
+        self.data_set_type = data_set_type
+        return self
+
+    def temp_loggers(self):
+        return self.data_set(DataSet.TEMP_LOGGERS)
+
+    def weather(self):
+        return self.data_set(DataSet.WEATHER)
+
+    def underway(self):
+        return self.data_set(DataSet.UNDERWAY)
 
     def add_filter(self, filter_type: FilterType, value):
         self.filter_dict[filter_type.value] = value
@@ -194,6 +212,9 @@ class DataRequestBuilder:
 
     def daily(self):
         return self.summary(SummaryType.DAILY)
+
+    def weekly(self):
+        return self.summary(SummaryType.WEEKLY)
 
     def add_url_args(self, **url_args):
         self.url_args_dict.update(url_args)
@@ -304,7 +325,7 @@ class AIMSDataClient:
         response = requests.get(data_set.parameters_url(**self.url_args_dict))
         return response.json()
 
-    def data_request(self, data_set: DataSet):
+    def data_request(self, data_set: DataSet = None):
         return DataRequestBuilder(data_set, self, **self.url_args_dict)
 
     def aims_data(self, url, retry_attempts=4, return_partial=False, sleep_time=5):
