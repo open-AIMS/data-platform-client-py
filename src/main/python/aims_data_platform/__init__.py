@@ -53,7 +53,7 @@ class DataSet(StrEnum):
         return data_set
 
     def base_url(self, scheme=None, host=None, base_path=None):
-        final_base_path = base_path or self.data_set_version.value
+        final_base_path = base_path if base_path is not None else self.data_set_version.value
         final_host = host or _DEFAULT_HOST_
         final_scheme = scheme or _DEFAULT_SCHEME_
         return f"{final_scheme}://{final_host}{final_base_path}/{_DOI_PREFIX_}/{self.value}"
@@ -196,9 +196,12 @@ class DataRequestBuilder:
     def underway(self):
         return self.data_set(DataSet.UNDERWAY)
 
-    def add_filter(self, filter_type: FilterType, value):
-        self.filter_dict[filter_type.value] = value
+    def add_query_param(self, param: str, value):
+        self.filter_dict[param] = value
         return self
+
+    def add_filter(self, filter_type: FilterType, value):
+        return self.add_query_param(filter_type.value, value)
 
     def from_date(self, value):
         return self.add_filter(FilterType.FROM_DATE, value)
@@ -326,7 +329,7 @@ class AIMSDataClient:
         return response.json()
 
     def data_request(self, data_set: DataSet = None):
-        return DataRequestBuilder(data_set, self, **self.url_args_dict)
+        return DataRequestBuilder(data_set=data_set, aims_data_client=self, **self.url_args_dict)
 
     def aims_data(self, url, retry_attempts=4, return_partial=False, sleep_time=5):
         df: pd.DataFrame = None
@@ -403,7 +406,7 @@ class AIMSDataClient:
 
     @classmethod
     def local_dev_client(cls):
-        return cls(scheme="http", host="localhost:8000", base_path="")
+        return cls(api_key="XXXXX", scheme="http", host="localhost:8000", base_path="")
 
     @classmethod
     def from_env(cls, key, fail_not_found=True):
